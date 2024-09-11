@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation"; 
 
 import { LatestPost } from "@sdit/app/_components/post";
 import { getServerAuthSession } from "@sdit/server/auth";
@@ -10,6 +11,7 @@ export default async function Home() {
 
   void api.post.getLatest.prefetch();
 
+  if (!session) redirect("/auth");
   return (
     <HydrateClient>
       <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">

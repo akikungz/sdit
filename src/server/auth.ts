@@ -1,11 +1,13 @@
 import {
-  getServerSession,
+  type Awaitable,
+  type RequestInternal,
+  type User,
   type DefaultSession,
   type NextAuthOptions,
+  getServerSession,
 } from "next-auth";
-import DiscordProvider from "next-auth/providers/discord";
 
-import { env } from "@sdit/env";
+import Credentials from "next-auth/providers/credentials";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -44,19 +46,28 @@ export const authOptions: NextAuthOptions = {
     }),
   },
   providers: [
-    DiscordProvider({
-      clientId: env.DISCORD_CLIENT_ID,
-      clientSecret: env.DISCORD_CLIENT_SECRET,
-    }),
-    /**
-     * ...add more providers here.
-     *
-     * Most other providers require a bit more work than the Discord provider. For example, the
-     * GitHub provider requires you to add the `refresh_token_expires_in` field to the Account
-     * model. Refer to the NextAuth.js docs for the provider you want to use. Example:
-     *
-     * @see https://next-auth.js.org/providers/github
-     */
+    Credentials({
+      credentials: {
+        username: {
+          label: "Username",
+          type: "text",
+          placeholder: "s6xxxxxxxxxxxx",
+        },
+        password: {
+          label: "Password",
+          type: "password",
+          placeholder: "********"
+        }
+      },
+      authorize: (
+        credentials: Record<"username", string> | undefined,
+        req: Pick<RequestInternal, "body" | "query" | "headers" | "method">
+      ): Awaitable<User | null> => {
+        console.log("credentials", credentials);
+        throw new Error("Function not implemented.");
+      },
+      name: "ICIT Account",
+    })
   ],
 };
 
