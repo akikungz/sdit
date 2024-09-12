@@ -1,8 +1,13 @@
+import { type GetServerSidePropsContext } from "next";
 import Image from "next/image";
+import { getCsrfToken } from "next-auth/react"
+
 import { cn } from "@sdit/lib/utils";
 import AnimatedGridPattern from "@sdit/components/decorator/AnimatedGridPatten";
 
-export default async function AuthPage({ csrfToken }: { csrfToken: string }) {
+export default async function AuthPage(ctx: GetServerSidePropsContext) {
+    const csrfToken = await getCsrfToken(ctx);
+
     return (
         <main className="w-screen h-screen flex items-center justify-center relative px-4">
             <AnimatedGridPattern 
@@ -29,7 +34,7 @@ export default async function AuthPage({ csrfToken }: { csrfToken: string }) {
                     method="post"
                     action="/api/auth/callback/credentials"
                 >
-                    <input type="hidden" name="csrfToken" defaultValue={csrfToken} value={csrfToken} />
+                    <input type="hidden" name="csrfToken" defaultValue={csrfToken} />
                     <div
                         className={
                             cn(

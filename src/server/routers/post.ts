@@ -4,7 +4,7 @@ import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
-} from "@sdit/server/api/trpc";
+} from "@sdit/server/trpc";
 
 let post = {
   id: 1,
