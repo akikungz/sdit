@@ -1,5 +1,5 @@
-import { postRouter } from "@sdit/server/api/routers/post";
-import { createCallerFactory, createTRPCRouter } from "@sdit/server/api/trpc";
+import { postRouter } from "@sdit/server/routers/post";
+import { createCallerFactory, createTRPCRouter } from "@sdit/server/trpc";
 
 /**
  * This is the primary router for your server.
