@@ -52,7 +52,7 @@ model SportDayStudent {
   studentId String          @unique
   student   Student         @relation(fields: [studentId], references: [id])
   colorId   Int
-  color     SportDayColor  @relation(fields: [colorId], references: [id])
+  color     SportDayColor   @relation(fields: [colorId], references: [id])
   year      Int
 
   SportDayStudentSports SportDayStudentSports[]
@@ -81,7 +81,7 @@ model SportDayStudentSports {
   sportId   Int
   sport     SportDaySports  @relation(fields: [sportId], references: [id])
   colorId   Int?
-  color     SportDayColor?   @relation(fields: [colorId], references: [id])
+  color     SportDayColor?  @relation(fields: [colorId], references: [id])
 }
 
 model SportDayShirtOrder {
