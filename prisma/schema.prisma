@@ -1,0 +1,95 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MajorShort {
+  IT
+  ITI
+  INE
+  INET
+}
+
+model Major {
+  id    Int   @id
+  name  MajorShort
+
+  Student Student[]
+}
+
+model Student {
+  id            String   @id
+  first_name    String
+  last_name     String
+  display_name  String
+  majorId       Int
+  major         Major    @relation(fields: [majorId], references: [id])
+
+  SportDayStudent SportDayStudent[]
+}
+
+model SportDayColor {
+  id    Int    @id @default(autoincrement())
+  color String
+
+  SportDayStudent SportDayStudent[]
+
+  SportDayStudentSports SportDayStudentSports[]
+}
+
+model SportDayStudent {
+  id        Int             @id @default(autoincrement())
+  studentId String          @unique
+  student   Student         @relation(fields: [studentId], references: [id])
+  colorId   Int
+  color     SportDayColor  @relation(fields: [colorId], references: [id])
+  year      Int
+
+  SportDayStudentSports SportDayStudentSports[]
+}
+
+model SportDaySports {
+  id                  Int    @id @default(autoincrement())
+  name                String
+  th_name             String
+  limit               Int
+  match_1             DateTime
+  match_2             DateTime?
+  final_match         DateTime?
+  lower_match         DateTime?
+  match_time          Int
+
+  @@unique([name])
+
+  SportDayStudentSports SportDayStudentSports[]
+}
+
+model SportDayStudentSports {
+  id        Int             @id @default(autoincrement())
+  studentId String
+  student   SportDayStudent @relation(fields: [studentId], references: [studentId])
+  sportId   Int
+  sport     SportDaySports  @relation(fields: [sportId], references: [id])
+  colorId   Int?
+  color     SportDayColor?   @relation(fields: [colorId], references: [id])
+}
+
+model SportDayShirtOrder {
+  id            Int       @id @default(autoincrement())
+  studentId     String
+  first_name    String
+  last_name     String
+  display_name  String
+  size          String
+  count         Int
+}
