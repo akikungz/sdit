@@ -24,7 +24,7 @@ export default new Elysia({ prefix: '/sportsday' })
             set.status = 403;
             return { error: "Only student allowed" }
         }
-        
+
         const alreadyJoined = await sportsDayGetStudent(isToken.username);
         if (alreadyJoined) {
             set.status = 400;
@@ -263,7 +263,7 @@ export default new Elysia({ prefix: '/sportsday' })
                 token: t.String()
             }),
         })
-        .post("/staff", async ({ prisma, jwt, cookie, set }) => {
+        .post("/staff", async ({ prisma, jwt, cookie, set, body }) => {
             const isToken = await jwt.verify(cookie.token.value) as JwtPayload;
             if (!isToken || typeof isToken === 'boolean' || !isToken.username || !isToken.type) return { error: "Invalid token" }
 
@@ -299,7 +299,8 @@ export default new Elysia({ prefix: '/sportsday' })
                 await prisma.sportDayStaff.create({
                     data: {
                         studentId: isToken.username,
-                        colorId: student.colorId
+                        colorId: student.colorId,
+                        phone: body.phone
                     }
                 });
 
@@ -310,5 +311,9 @@ export default new Elysia({ prefix: '/sportsday' })
                 set.status = 500;
                 return { error: "Error registering staff" }
             }
+        }, {
+            body: t.Object({
+                phone: t.String()
+            }),
         })
     )

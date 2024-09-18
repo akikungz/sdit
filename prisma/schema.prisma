@@ -94,6 +94,7 @@ model SportDayStaff {
   student   Student @relation(fields: [studentId], references: [id])
   colorId   Int
   color     SportDayColor @relation(fields: [colorId], references: [id])
+  phone     String
 
   @@unique([studentId])
 }
