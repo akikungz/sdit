@@ -36,6 +36,8 @@ model Student {
   major         Major    @relation(fields: [majorId], references: [id])
 
   SportDayStudent SportDayStudent[]
+
+  SportDayStaff SportDayStaff[]
 }
 
 model SportDayColor {
@@ -45,6 +47,8 @@ model SportDayColor {
   SportDayStudent SportDayStudent[]
 
   SportDayStudentSports SportDayStudentSports[]
+
+  SportDayStaff SportDayStaff[]
 }
 
 model SportDayStudent {
@@ -82,4 +86,14 @@ model SportDayStudentSports {
   sport     SportDaySports  @relation(fields: [sportId], references: [id])
   colorId   Int?
   color     SportDayColor?  @relation(fields: [colorId], references: [id])
+}
+
+model SportDayStaff {
+  id       Int    @id @default(autoincrement())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id])
+  colorId   Int
+  color     SportDayColor @relation(fields: [colorId], references: [id])
+
+  @@unique([studentId])
 }
