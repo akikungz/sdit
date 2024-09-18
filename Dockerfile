@@ -9,7 +9,11 @@ RUN bun install
 
 COPY . .
 
-RUN bun run build
+RUN bun prisma:migrate production --name init
+RUN bun prisma:generate
+
+RUN bun seed
+RUN bunx next build
 
 CMD ["bunx", "next", "start"]
 
