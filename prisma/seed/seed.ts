@@ -142,8 +142,41 @@ async function seed() {
                 final_match: "2024-10-05T04:00:00Z",
                 match_time: 30,
             },
+            {
+                name: "flag_race",
+                th_name: "วิ่งเปรี้ยว",
+                limit: 7,
+                match_1: "2024-10-05T06:00:00Z",
+                match_time: 30,
+            },
+            {
+                name: "footsal",
+                th_name: "ฟุตซอล",
+                limit: 7,
+                match_1: "2024-10-05T02:00:00Z",
+                match_2: "2024-10-05T03:00:00Z",
+                lower_match: "2024-10-05T07:30:00Z",
+                final_match: "2024-10-05T08:30:00Z",
+                match_time: 60,
+            },
+            {
+                name: "tug_of_war",
+                th_name: "ชักคะเย่อ",
+                limit: 14,
+                match_1: "2024-10-05T06:30:00Z",
+                match_time: 30,
+            },
+            {
+                name: "eat_race",
+                th_name: "กินวิบาก",
+                limit: 4,
+                match_1: "2024-10-05T07:00:00Z",
+                match_time: 30,
+            }
         ]
     });
+
+    await prisma.$disconnect();
 }
 
 seed();
