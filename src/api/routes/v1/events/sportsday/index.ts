@@ -16,23 +16,49 @@ type JwtPayload = {
 export default new Elysia({ prefix: '/sportsday' })
     .use(jwt({ secret: env.JWT_SECRET }))
     .decorate('prisma', new PrismaClient())
-    .post("/join", async ({ jwt, cookie: { token }, prisma }) => {
+    .post("/join", async ({ jwt, cookie: { token }, prisma, set }) => {
         const isToken = await jwt.verify(token.value) as JwtPayload;
         if (!isToken || typeof isToken === 'boolean' || !isToken.username || !isToken.type) return { error: "Invalid token" }
 
-        if (isToken.type !== "students") return { error: "Only student allowed" }
+        if (isToken.type !== "students") {
+            set.status = 403;
+            return { error: "Only student allowed" }
+        }
+        
         const alreadyJoined = await sportsDayGetStudent(isToken.username);
-        if (alreadyJoined) return { error: "You already joined" }
+        if (alreadyJoined) {
+            set.status = 400;
+            return { error: "You already joined" }
+        }
 
         const major = validateMajor(isToken.username);
-        if (major === null) return { error: "Invalid student ID" }
+        if (major === null) {
+            set.status = 400;
+            return { error: "Invalid student ID" }
+        }
 
         if (major.major != "IT") {
             switch (major.major) {
                 case "ITI":
-                    return await sportsDayInsertStudent(isToken.username, 3);
+                    try {
+                        const data = await sportsDayInsertStudent(isToken.username, 3);
+
+                        set.status = 201;
+                        return { data, error: null }
+                    } catch (err) {
+                        console.error(err);
+                        return { error: "Error joining sports day" }
+                    }
                 default:
-                    return await sportsDayInsertStudent(isToken.username, 4);
+                    try {
+                        const data = await sportsDayInsertStudent(isToken.username, 4);
+
+                        set.status = 201;
+                        return { data, error: null }
+                    } catch (err) {
+                        console.error(err);
+                        return { error: "Error joining sports day" }
+                    }
             }
         } else {
             // get last it student in year
@@ -49,9 +75,27 @@ export default new Elysia({ prefix: '/sportsday' })
             });
 
             if (!lastItStudent) {
-                return await sportsDayInsertStudent(isToken.username, 1);
+                try {
+                    const data = await sportsDayInsertStudent(isToken.username, 1);
+
+                    set.status = 201;
+                    return { data, error: null }
+                } catch (err) {
+                    console.error(err);
+                    set.status = 500;
+                    return { error: "Error joining sports day" }
+                }
             } else {
-                return await sportsDayInsertStudent(isToken.username, lastItStudent.colorId === 1 ? 2 : 1);
+                try {
+                    const data = await sportsDayInsertStudent(isToken.username, lastItStudent.colorId === 1 ? 2 : 1);
+
+                    set.status = 201;
+                    return { data, error: null }
+                } catch (err) {
+                    console.error(err);
+                    set.status = 500;
+                    return { error: "Error joining sports day" }
+                }
             }
         }
     }, {
@@ -59,15 +103,22 @@ export default new Elysia({ prefix: '/sportsday' })
             token: t.String()
         })
     })
-    .get("/me", async ({ jwt, cookie: { token } }) => {
+    .get("/me", async ({ jwt, cookie: { token }, set }) => {
         const isToken = await jwt.verify(token.value) as JwtPayload;
         if (!isToken || typeof isToken === 'boolean' || !isToken.username || !isToken.type) return { error: "Invalid token" }
 
         if (isToken.type !== "students") return { error: "Only student allowed" }
-        const student = await sportsDayGetStudent(isToken.username);
-        if (!student) return { error: "You haven't joined yet" }
+        try {
+            const student = await sportsDayGetStudent(isToken.username);
+            if (!student) return { error: "You haven't joined yet" }
 
-        return student;
+            set.status = 200;
+            return { data: student, error: null };
+        } catch (err) {
+            console.error(err);
+            set.status = 500;
+            return { error: "Error fetching student" }
+        }
     }, {
         cookie: t.Object({
             token: t.String()
@@ -86,18 +137,27 @@ export default new Elysia({ prefix: '/sportsday' })
         });
     })
     .group("/sports", (app) => app
-        .get("", async ({ prisma }) => {
+        .get("", async ({ prisma, set }) => {
             const data = await prisma.sportDaySports.findMany();
+            set.status = 200;
             return data;
         })
-        .get("/:name", async ({ prisma, params: { name } }) => {
-            const data = await prisma.sportDaySports.findFirst({
-                where: {
-                    name
-                }
-            });
-            if (!data) return { error: "Not found" }
-            return data;
+        .get("/:name", async ({ prisma, params: { name }, set }) => {
+            try {
+                const data = await prisma.sportDaySports.findFirst({
+                    where: {
+                        name
+                    }
+                });
+                if (!data) return { error: "Not found" }
+                
+                set.status = 200;
+                return { data, error: null }
+            } catch (err) {
+                console.error(err);
+                set.status = 500;
+                return { error: "Error fetching sport" }
+            }
         })
         .post("/:name", async ({ prisma, jwt, cookie, params: { name }, set }) => {
             const isToken = await jwt.verify(cookie.token.value) as JwtPayload;
