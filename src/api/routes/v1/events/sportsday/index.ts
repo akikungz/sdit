@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, SportDaySports } from "@prisma/client";
 
 import { Elysia, t } from "elysia";
 import jwt from "@elysiajs/jwt";
@@ -135,7 +135,7 @@ export default new Elysia({ prefix: '/sportsday' })
             if (!data) return { error: "Not found" }
             return data;
         })
-        .post("/:name", async ({ prisma, jwt, cookie, params: { name } }) => {
+        .post("/:name", async ({ prisma, jwt, cookie, params: { name }, set }) => {
             const isToken = await jwt.verify(cookie.token.value) as JwtPayload;
             if (!isToken || typeof isToken === 'boolean' || !isToken.username || !isToken.type) return { error: "Invalid token" }
 
@@ -149,7 +149,10 @@ export default new Elysia({ prefix: '/sportsday' })
                 },
             });
 
-            if (!studentSport) return { error: "You haven't joined yet" }
+            if (!studentSport) {
+                set.status = 400;
+                return { error: "You haven't joined yet" }
+            }
 
             const sport = await prisma.sportDaySports.findFirst({
                 where: {
@@ -157,7 +160,10 @@ export default new Elysia({ prefix: '/sportsday' })
                 }
             });
 
-            if (!sport) return { error: "Sport not found" }
+            if (!sport) {
+                set.status = 404;
+                return { error: "Sport not found" }
+            }
 
             const target = await prisma.sportDayStudentSports.count({
                 where: {
@@ -167,7 +173,10 @@ export default new Elysia({ prefix: '/sportsday' })
                 }
             })
 
-            if (target >= sport.limit) return { error: "Sport is full" }
+            if (target >= sport.limit) {
+                set.status = 400;
+                return { error: "Sport is full" }
+            }
 
             const registered = await prisma.sportDayStudentSports.findMany({
                 where: {
@@ -179,18 +188,33 @@ export default new Elysia({ prefix: '/sportsday' })
                 }
             });
 
-            if (registered.find(r => r.sport.name == sport.name)) return { error: "You already registered this sport" }
+            if (registered.find(r => r.sport.name == sport.name)) {
+                set.status = 400;
+                return { error: "You already registered this sport" }
+            }
 
             if (registered.length > 0) {
-                for (const reg of registered) {
-                    if (
-                        sport.match_1 === reg.sport.match_1 || 
-                        sport.match_2 === reg.sport.match_2 || 
-                        sport.final_match === reg.sport.final_match || 
-                        sport.lower_match === reg.sport.lower_match
-                    ) {
-                        return { error: "Sport time conflict" }
-                    }
+                const checkConflict = (match: Date, r: SportDaySports) => {
+                    // Check if match time is in between
+                    if (match.getTime() > r.match_1.getTime() && match.getTime() < r.match_1.getTime() + r.match_time * 60 * 1000) return true;
+                    if (r.match_2 && match.getTime() > r.match_2.getTime() && match.getTime() < r.match_2.getTime() + r.match_time * 60 * 1000) return true;
+                    if (r.final_match && match.getTime() > r.final_match.getTime() && match.getTime() < r.final_match.getTime() + r.match_time * 60 * 1000) return true;
+                    if (r.lower_match && match.getTime() > r.lower_match.getTime() && match.getTime() < r.lower_match.getTime() + r.match_time * 60 * 1000) return true;
+
+                    return false;
+                }
+
+                const conflict = registered
+                    .filter(r => 
+                        checkConflict(sport.match_1, r.sport) || 
+                        sport.match_2 && checkConflict(sport.match_2, r.sport) || 
+                        sport.final_match && checkConflict(sport.final_match, r.sport) || 
+                        sport.lower_match && checkConflict(sport.lower_match, r.sport)
+                    );
+                
+                if (conflict.length > 0) {
+                    set.status = 400;
+                    return { error: "Sport time conflict" }
                 }
             }
 
@@ -203,9 +227,11 @@ export default new Elysia({ prefix: '/sportsday' })
                     }
                 });
 
+                set.status = 201;
                 return { success: true, error: null }
             } catch (err) {
                 console.error(err);
+                set.status = 500;
                 return { error: "Error registering sport" }
             }
         }, {
