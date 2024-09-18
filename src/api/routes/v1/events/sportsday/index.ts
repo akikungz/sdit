@@ -7,7 +7,6 @@ import { env } from "@sdit/env";
 import { sportsDayGetStudent, sportsDayInsertStudent } from "@sdit/api/database";
 import validateMajor from "@sdit/utils/validateMajor";
 import getStudentYear from "@sdit/utils/getStudentYear";
-import { getUser } from "@sdit/api/external/icit";
 
 type JwtPayload = {
     username: string;
@@ -85,41 +84,6 @@ export default new Elysia({ prefix: '/sportsday' })
                 color: true
             }
         });
-    })
-    .post("/shirt", async ({ body, prisma, jwt, cookie }) => {
-        const isToken = await jwt.verify(cookie.token.value) as JwtPayload;
-        if (!isToken || typeof isToken === 'boolean' || !isToken.username || !isToken.type) return { error: "Invalid token" }
-
-        const user = await getUser(isToken.username);
-        if (!user) return { error: "Error fetching user data from ICIT" }
-        if (user.error) return user;
-
-        return await prisma.sportDayShirtOrder.create({
-            data: {
-                studentId: isToken.username,
-                size: body.size,
-                first_name: user.first_name!,
-                last_name: user.last_name!,
-                display_name: user.display_name!,
-                count: body.count
-            }
-        });
-    }, {
-        cookie: t.Object({
-            token: t.String()
-        }),
-        body: t.Object({
-            size: t.Enum({
-                "S": "S",
-                "M": "M",
-                "L": "L",
-                "XL": "XL",
-                "2XL": "2XL",
-                "3XL": "3XL",
-                "4XL": "4XL",
-            }),
-            count: t.Number()
-        }),
     })
     .group("/sports", (app) => app
         .get("", async ({ prisma }) => {
